@@ -2,24 +2,57 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage
+import neurons
+
+from math import pi
+
 
 def main():
-    #data = np.genfromtxt("../Spike/data/NonlinMatrix/lif_suscept_matrix.csv", delimiter=',')
-    data = np.genfromtxt("../Spike/data/NonlinMatrix/lif_Ne5_suscept_matrix.csv", delimiter=',')
-    #data = np.genfromtxt("../Spike/data/NonlinMatrix/lifac_suscept_matrix.csv", delimiter=',')
-    #data = np.genfromtxt("../Spike/data/NonlinMatrix/lif_reduced_suscept_matrix.csv", delimiter=',')
+    # analytics
+    lif = neurons.LIF(1.1, 0.001)
+    steps = 50
+    chi_2 = np.zeros(shape=(steps, steps), dtype=complex)
+    f = np.linspace(0.0, 1.0, num=steps)
 
-    #data = scipy.ndimage.uniform_filter(data[1:100, 1:100], size=2, mode='constant')
-    #data = scipy.ndimage.gaussian_filter(data[1:1000, 1:1000], sigma=0.5)
-    #data = abs(data)
-    data = abs(data[1:100, 1:100])
+    for i in range(steps):
+        for j in range(steps):
+            chi_2[i, j] = lif.susceptibility_2(2.0 * pi * f[i], 2.0 * pi * f[j])
 
-    fig, ax = plt.subplots()
-    ax.set_title("LIFAC")
-    pos = ax.matshow(data)
-    fig.colorbar(pos, ax=ax)
+    # data
+    # data = np.genfromtxt("../Spike/data/NonlinMatrix/lif_suscept_matrix.csv", delimiter=',')
+    # data = np.genfromtxt("../Spike/data/NonlinMatrix/lif_Ne5_suscept_matrix.csv", delimiter=',')
+    # data = np.genfromtxt("../Spike/data/NonlinMatrix/lifac_suscept_matrix.csv", delimiter=',')
+    data = np.genfromtxt("../Spike/data/LIF_Check/lif_suscept_matrix.csv", delimiter=',', dtype=np.complex128)
 
-    #fig.savefig("suscept_nonlin_matrix_lifac_unfiltered.png")
+    data = scipy.ndimage.gaussian_filter(np.real(data[1:100, 1:100]), sigma=0.5) + 1j * scipy.ndimage.gaussian_filter(
+        np.imag(data[1:100, 1:100]), sigma=0.5)
+    max_freq_bin = 100
+    data_abs = np.abs(data[1:max_freq_bin, 1:max_freq_bin])
+    data_angle = np.angle(data[1:max_freq_bin, 1:max_freq_bin])
+
+    # plotting
+    fig, ((ax1, ax2),(ax3, ax4)) = plt.subplots(2, 2)
+    ax1.set_title("$|\chi_2^{LIF}(f_1, f_2)|$")
+    pos = ax1.matshow(data_abs, extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
+    # pos = ax.matshow(data, extent=[0, 10, 10, 0], vmin=0, vmax=0.5)
+    fig.colorbar(pos, ax=ax1)
+
+    ax2.set_title("$|\chi_2^{LIF (ana)}(f_1, f_2)|$")
+    pos = ax2.matshow(np.abs(chi_2), extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
+    # pos = ax.matshow(data, extent=[0, 10, 10, 0], vmin=0, vmax=0.5)
+    fig.colorbar(pos, ax=ax2)
+
+    ax3.set_title("$\phi(\chi_2^{LIF}(f_1, f_2))$")
+    pos = ax3.matshow(data_angle, extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
+    # pos = ax.matshow(data, extent=[0, 10, 10, 0], vmin=0, vmax=0.5)
+    fig.colorbar(pos, ax=ax3)
+
+    ax4.set_title("$\phi(\chi_2^{LIF(ana)}(f_1, f_2))$")
+    pos = ax4.matshow(-np.angle(chi_2), extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
+    # pos = ax.matshow(data, extent=[0, 10, 10, 0], vmin=0, vmax=0.5)
+    fig.colorbar(pos, ax=ax4)
+
+    fig.savefig("img/suscept_nonlin_matrix_lif_voro.png")
     plt.show()
 
 
