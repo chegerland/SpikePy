@@ -41,7 +41,7 @@ class PIF:
         self.D = d
 
     def stationary_rate(self):
-        return 1.0 / self.mu
+        return self.mu
 
     def susceptibility_1(self, omega):
         tau_e = 2.0 * self.D / (self.mu * self.mu)
@@ -158,33 +158,50 @@ class LIFAC:
 
     def integrand_for_stat(self, x):
         return np.re(self.lif.susceptibility_2(-x, x)) * self.Delta ** 2 * self.tau_a ** 2 / (
-                    1.0 - self.tau_a ** 2 * x ** 2) * self.lif.power_spectrum(x)
+                1.0 - self.tau_a ** 2 * x ** 2) * self.lif.power_spectrum(x)
 
     def susceptibility_1(self, omega):
-        #result = self.lif.susceptibility_1(omega)
-        #result = np.real(np.cdouble(result)) + 1.0j * np.imag(np.cdouble(result))
-        #result = result / (1.0 + result * self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * omega))
+        #suscept1 = self.lif.susceptibility_1(omega)
+        #Omega = self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * omega)
+        #result = np.cdouble(suscept1 / (1.0 + Omega * suscept1 ))
+
+        suscept1 = self.lif.susceptibility_1(omega)
+        suscept2 = self.lif.susceptibility_2(1e-13, omega)
+        Omega = self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * omega)
+        B = suscept1 + 2.0*self.get_mean_a()*suscept2
+        result = np.cdouble(B/(1.0 + Omega * B))
 
         #suscept_1_lif = self.lif.susceptibility_1(omega)
         #suscept_2_lif = self.lif.susceptibility_2(1e-7, omega)
-        #a = suscept_1_lif + 2.0*self.get_mean_a()*suscept_2_lif
-        #result = np.cdouble(a/(1.0 + self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * omega) * a))
-
-        suscept_1_lif = self.lif.susceptibility_1(omega)
-        suscept_2_lif = self.lif.susceptibility_2(1e-7, omega)
-        A = 2 * pi * self.r0 + 2 * pi * self.mean_a * self.lif.susceptibility_1(
-            1e-7) + 2.0 * pi * self.mean_a * self.mean_a * self.lif.susceptibility_2(1e-7, 1e-7)
-        B = suscept_1_lif + 2.0 * self.mean_a * suscept_2_lif
-        C = - self.Delta * self.tau_a / (1 - 1j * self.tau_a * omega) * B
-        result = np.cdouble(B / (1 - C) - 2 * (1/(2*pi)*suscept_2_lif * self.Delta * self.tau_a * A) / ((1 - C) * (
-                1 - self.Delta * self.tau_a * (
-                self.lif.susceptibility_1(1e-7) + 2.0 * self.mean_a * self.lif.susceptibility_2(1e-7,
-                                                                                                   1e-7)))))
+        #A = 2 * pi * self.r0 + 2 * pi * self.mean_a * self.lif.susceptibility_1(
+        #    1e-7) + 2.0 * pi * self.mean_a * self.mean_a * self.lif.susceptibility_2(1e-7, 1e-7)
+        #B = suscept_1_lif + 2.0 * self.mean_a * suscept_2_lif
+        #C = - self.Delta * self.tau_a / (1 - 1j * self.tau_a * omega) * B
+        #result = np.cdouble(
+        #    B / (1 - C) - 2 * (1 / (2 * pi) * suscept_2_lif * self.Delta * self.tau_a * A) / ((1 - C) * (
+        #            1 - self.Delta * self.tau_a * (
+        #            self.lif.susceptibility_1(1e-7) + 2.0 * self.mean_a * self.lif.susceptibility_2(1e-7,
+        #                                                                                            1e-7)))))
         return result
 
     def susceptibility_2(self, omega_1, omega_2):
         result = self.lif.susceptibility_2(omega_1, omega_2)
-        suscept1 = self.susceptibility_1(omega_1 + omega_2)
+        suscept1 = self.lif.susceptibility_1(omega_1 + omega_2)
         result = np.cdouble(
-            result / (1.0 + suscept1 * self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * (omega_1 + omega_2))))
+            result / (1.0 + self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * (omega_1 + omega_2))) * (
+                        suscept1 + 2.0 * self.Delta * self.tau_a * self.stationary_rate() * self.lif.susceptibility_2(1e-7,
+                                                                                                            omega_1 + omega_2)))
+        return result
+
+    def susceptibility_2_better(self, omega_1, omega_2):
+        suscept2 = self.lif.susceptibility_2(omega_1, omega_2)
+        suscept1 = self.lif.susceptibility_1(omega_1 + omega_2)
+        Omega_sum = self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * (omega_1 + omega_2))
+        B_sum = suscept1 + 2.0 * self.Delta * self.tau_a * self.stationary_rate() * self.lif.susceptibility_2(1e-7, omega_1 + omega_2)
+        C_sum = - Omega_sum * B_sum
+        Omega_1 = self.Delta * self.tau_a / (1.0 - 1.0j * self.tau_a * (omega_1 + omega_2))
+        B_1 = self.lif.susceptibility_1(omega_1) + 2.0 * self.Delta * self.tau_a * self.stationary_rate() * self.lif.susceptibility_2(1e-7, omega_1)
+        C_1 = -Omega_1 * B_1
+
+        result = np.cdouble( suscept2 / (1.0 - C_sum) + 2.0 * suscept2*C_1/((1 - C_sum)*(1 - C_1)))
         return result
