@@ -1,66 +1,76 @@
 #!/usr/bin/env python3
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.ndimage
 import neurons
-
-from math import pi
+import utils
 
 
 def main():
-    # analytics
-    lifac = neurons.LIFAC(3.5, 0.1, 0.1, 10.0)
-    steps = 100
-    chi_2_lifac = np.zeros(shape=(steps, steps), dtype=complex)
-    chi_2_lifac_2 = np.zeros(shape=(steps, steps), dtype=complex)
-    f = np.linspace(0.0, 3.5, num=steps)
+    """
+    We plot the different approximation orders for the second order susceptibility of the LIFAC and also numerically
+    obtained data from Spike.
+    """
 
-    for i in range(steps):
-        for j in range(steps):
-            chi_2_lifac[i, j] = lifac.susceptibility_2(2.0 * pi * f[i], 2.0 * pi * f[j])
-            chi_2_lifac_2[i, j] = lifac.susceptibility_2_better(2.0 * pi * f[i], 2.0 * pi * f[j])
+    # define the lif neuron
+    lifac = neurons.LIFAC(3.5, 1e-1, 1e-1, 10.0)
 
-    # data
-    data = np.genfromtxt("../Spike/data/NonlinMatrix/lifac_suscept_matrix.csv", delimiter=',', dtype=np.complex128)
+    # calculate the analytic matrices for the full range
+    chi_2_numeric_0 = utils.calculate_analytic_matrix("chi_2_lifac_0.csv", 0.0, 3.5, 100, lifac.susceptibility_2)
+    chi_2_0 = utils.create_full_matrix(chi_2_numeric_0)
+    chi_2_numeric_1 = utils.calculate_analytic_matrix("chi_2_lifac_1.csv", 0.0, 3.5, 100, lifac.susceptibility_2_better)
+    chi_2_1 = utils.create_full_matrix(chi_2_numeric_1)
+
+    # import the data
+    data = np.genfromtxt("../Spike/data/LIFAC_Matrix/lifac_Ne6_suscept_matrix.csv", delimiter=',',
+                         dtype=np.complex128)
+    size_data = data.shape[0]
+    for i in range(size_data):
+        for j in range(size_data):
+            if i <= j:
+                data[i][j] = np.conj(data[i][j])
 
     max_freq_bin = 350
-    #data = scipy.ndimage.gaussian_filter(np.real(data[1:max_freq_bin, 1:max_freq_bin]), sigma=0.5) + 1j * scipy.ndimage.gaussian_filter(
-    #    np.imag(data[1:max_freq_bin, 1:max_freq_bin]), sigma=0.5)
-    #data_abs = np.abs(data)
-    #data_angle = np.angle(data)
-    data_abs = np.abs(data[1:max_freq_bin, 1:max_freq_bin])
-    data_angle = np.angle(data[1:max_freq_bin, 1:max_freq_bin])
+    data = data[1:max_freq_bin, 1:max_freq_bin]
+    chi_2_data = utils.create_full_matrix(data)
 
     # plotting
-    fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(20, 20))
-    ax1.set_title("$|\chi_2^{LIFAC(zeroth)}(f_1, f_2)|$")
-    pos1 = ax1.matshow(np.abs(chi_2_lifac), extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0], vmin=0, vmax=0.7)
-    fig.colorbar(pos1, ax=ax1)
+    matplotlib.rcParams["text.usetex"] = True
+    matplotlib.rcParams["font.size"] = 20
+    matplotlib.rcParams['axes.titlepad'] = 20
+    fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, figsize=(30, 20))
 
-    ax2.set_title("$|\chi_2^{LIFAC(num)}(f_1, f_2)|$")
-    pos2 = ax2.matshow(data_abs, extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0], vmin=0, vmax=0.7)
-    fig.colorbar(pos2, ax=ax2)
+    kwargs_abs = {
+        'extent': [-max_freq_bin / 100, max_freq_bin / 100, -max_freq_bin / 100,
+                   max_freq_bin / 100],
+        'vmin': 0,
+        'vmax': 0.5
+    }
+    kwargs_angle = {
+        'extent': [-max_freq_bin / 100, max_freq_bin / 100, -max_freq_bin / 100,
+                   max_freq_bin / 100]
+    }
 
-    ax3.set_title("$|\chi_2^{LIFAC(first)}(f_1, f_2)|$")
-    pos3 = ax3.matshow(np.abs(chi_2_lifac_2), extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0], vmin=0, vmax=0.7)
-    fig.colorbar(pos3, ax=ax3)
+    ax1.set_title("$|\\chi_2^{\\mathrm{LIFAC(num)}}(f_1, f_2)|$")
+    utils.plot_absolute_value(fig, ax1, np.abs(chi_2_data), **kwargs_abs)
 
-    ax4.set_title("$\phi(\chi_2^{LIFAC(zeroth)}(f_1, f_2))$")
-    pos4 = ax4.matshow(-np.angle(chi_2_lifac), extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
-    cbar4 = fig.colorbar(pos4, ax=ax4, ticks=[-pi, -pi/2, 0, pi/2, pi])
-    cbar4.ax.set_yticklabels(['$-\pi$', '$-\\frac{\pi}{2}$', '0', '$\\frac{\pi}{2}$', '$\pi'])
+    ax2.set_title("$|\\chi_2^0(f_1, f_2)|$")
+    utils.plot_absolute_value(fig, ax2, np.abs(chi_2_0), **kwargs_abs)
 
-    ax5.set_title("$\phi(\chi_2^{LIFAC(num)}(f_1, f_2))$")
-    pos5 = ax5.matshow(data_angle, extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
-    cbar5 = fig.colorbar(pos5, ax=ax5, ticks=[-pi, -pi/2, 0, pi/2, pi])
-    cbar5.ax.set_yticklabels(['$-\pi$', '$-\\frac{\pi}{2}$', '0', '$\\frac{\pi}{2}$', '$\pi'])
+    ax3.set_title("$|\\chi_2^1(f_1, f_2)|$")
+    utils.plot_absolute_value(fig, ax3, np.abs(chi_2_1), **kwargs_abs)
 
-    ax6.set_title("$\phi(\chi_2^{LIFAC(first)}(f_1, f_2))$")
-    pos6 = ax6.matshow(-np.angle(chi_2_lifac_2), extent=[0, max_freq_bin / 100, max_freq_bin / 100, 0])
-    cbar6 = fig.colorbar(pos6, ax=ax6, ticks=[-pi, -pi/2, 0, pi/2, pi])
-    cbar6.ax.set_yticklabels(['$-\pi$', '$-\\frac{\pi}{2}$', '0', '$\\frac{\pi}{2}$', '$\pi'])
+    ax4.set_title("$\\phi(\\chi_2^{\\mathrm{LIFAC(num)}}(f_1, f_2))$")
+    utils.plot_complex_angle(fig, ax4, np.angle(chi_2_data), **kwargs_angle)
 
-    fig.savefig("img/suscept_nonlin_matrix_lifac_better.png")
+    ax5.set_title("$\\phi(\\chi_2^0(f_1, f_2))$")
+    utils.plot_complex_angle(fig, ax5, np.angle(chi_2_0), **kwargs_angle)
+
+    ax6.set_title("$\\phi(\\chi_2^1(f_1, f_2))$")
+    utils.plot_complex_angle(fig, ax6, np.angle(chi_2_1), **kwargs_angle)
+
+    # save the file and show the plot
+    fig.savefig("img/suscept_lifac_matrix_orders.png", bbox_inches="tight")
     plt.show()
 
 
