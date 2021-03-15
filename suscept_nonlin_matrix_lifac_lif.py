@@ -12,17 +12,19 @@ def main():
     """
 
     # define lifac neuron
-    lifac = neurons.LIFAC(3.5, 0.1, 0.1, 10.0)
+    #lifac = neurons.LIFAC(3.5, 0.1, 0.1, 10.0)
+    lifac = neurons.LIFAC(3.5, 0.1, 1e-1, 20.0)
 
     # calculate analytic matrices and construct the full matrix from them
-    chi_2_numeric_lifac = utils.calculate_analytic_matrix("chi_2_lifac_1.csv", 0.0, 3.5, 100,
-                                                          lifac.susceptibility_2_better)
+    chi_2_numeric_lifac = utils.calculate_analytic_matrix("chi_2_lifac_test.csv", 0.0, 0.1, 20,
+                                                          lifac.susceptibility_2)
     chi_2_lifac = utils.create_full_matrix(chi_2_numeric_lifac)
-    chi_2_numeric_lif = utils.calculate_analytic_matrix("chi_2_lifac_lif.csv", 0.0, 3.5, 100,
+    chi_2_numeric_lif = utils.calculate_analytic_matrix("chi_2_lifac_lif_test.csv", 0.0, 0.1, 20,
                                                         lifac.lif.susceptibility_2)
     chi_2_lif = utils.create_full_matrix(chi_2_numeric_lif)
 
-    max_freq_bin = 350
+    max_freq_bin = 0.1*20
+    #max_freq_bin = 350
 
     # plotting
     matplotlib.rcParams["text.usetex"] = True
@@ -32,8 +34,8 @@ def main():
 
     kwargs_abs = {
         'extent': [-max_freq_bin / 100, max_freq_bin / 100, -max_freq_bin / 100, max_freq_bin / 100],
-        'vmin': 0,
-        'vmax': 0.5,
+        #'vmin': 0,
+        #'vmax': 0.5,
     }
     kwargs_angle = {
         'extent': [-max_freq_bin / 100, max_freq_bin / 100, -max_freq_bin / 100, max_freq_bin / 100],

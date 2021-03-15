@@ -250,3 +250,4 @@ dmypy.json
 
 *.csv
 img/
+.vscode/settings.json

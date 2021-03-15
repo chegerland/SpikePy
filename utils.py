@@ -37,7 +37,7 @@ def calculate_analytic_matrix(file_path, f_min, f_max, steps, susceptibility):
 
         # save the minimal matrix
         print("Saving matrix to file", file_path)
-        np.savetxt("chi_2_lifac_1.csv", chi_2, delimiter=',')
+        np.savetxt(file_path, chi_2, delimiter=',')
 
     return chi_2
 

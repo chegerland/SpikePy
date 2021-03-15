@@ -3,6 +3,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import neurons
+import csv
+import os
+import logging
 
 from math import pi
 
@@ -13,42 +16,71 @@ def running_mean(x, N):
 
 
 def main():
-    # read data
-    #file = "../Spike/data/Firing_rate/lifac_firing_rate.csv"
-    file = "../Spike/data/Firing_rate/lifac_two_sigs_firing_rate.csv"
-    #file = "../Spike/data/Firing_rate/lif_firing_rate.csv"
-    data = np.genfromtxt(file, delimiter=',')
+
+    # set logging level
+    logging.basicConfig(level=logging.INFO)
+
+    # files
+    path = "../Spike/data/Firing_rate/"
+    ini = "lifac_two_sigs_slow.ini"
+    ini_path = path + ini
+    pre, ext = os.path.splitext(ini)
+    raster_path = path + pre + "_raster.csv"
+    rate_path = path + pre + "_firing_rate.csv"
+
+    # read raster plot data
+    logging.info("Reading raster plot data.")
+    datafile = open(raster_path, 'r')
+    datareader = csv.reader(datafile)
+    data_raster = []
+    for row in datareader:
+        # I split the input string based on the comma separator, and cast every elements into a float
+        data_raster.append([float(elem) for elem in row])
+
+    # read firing rate data
+    logging.info("Reading firing rate data.")
+    data = np.genfromtxt(rate_path, delimiter=',')
     t = data[1:, 0]
     rate = data[1:, 1]
 
     rate = running_mean(rate, 10)
     t = t[0:rate.size]
 
-    # analytics
-    lifac = neurons.LIFAC(1.1, 1e-3, 1e-2, 10.0)
-    alpha = 0.03
-    f1 = 0.26
-    beta = 0.03
-    f2 = 0.1
-    rate_ana_lif = neurons.firing_rate_signal_nonlinear_two_sigs(lifac.lif, t, alpha, f1, beta, f2)
-    rate_ana_lifac = neurons.firing_rate_signal_nonlinear_two_sigs(lifac, t, alpha, f1, beta, f2)
-    rate_ana_lifac_lin = neurons.firing_rate_signal_linear_two_sigs(lifac, t, alpha, f1, beta, f2)
-    #alpha = 0.05
-    #f = 0.1834
-    #rate_ana_lif = neurons.firing_rate_signal_nonlinear(lifac.lif, t, alpha, f)
-    #rate_ana_lifac = neurons.firing_rate_signal_nonlinear(lifac, t, alpha, f)
+    # define neurons and signal
+    logging.info("Define analytic LIFAC neurons and calculate analytic rates.")
+    lifac = neurons.LIFAC.from_ini(ini_path)
+    signal = neurons.TwoCosineSignal.from_ini(ini_path)
+    rate_ana_lif = signal.firing_rate_nonlinear(lifac.lif, t)
+    rate_ana_lifac = signal.firing_rate_nonlinear(lifac, t)
+    rate_ana_lifac_lin = signal.firing_rate_linear(lifac.lif, t)
 
+    # plot
+    logging.info("Produce the plot.")
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax.set_xlabel("$t$")
-    ax.set_ylabel("$r(t)$")
-    ax.set_xlim(70, 100)
+    # set time limits
+    x_min = 20
+    x_max = 400
 
-    ax.plot(t, rate)
-    ax.plot(t, rate_ana_lif)
-    ax.plot(t, rate_ana_lifac)
-    ax.plot(t, rate_ana_lifac_lin)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10), sharex=True)
+    ax1.set_ylabel("$r(t)$")
+    ax1.set_xlim(x_min, x_max)
+    #ax1.set_ylim(0, 0.9)
+    ax1.plot(t, rate)
+    ax1.plot(t, rate_ana_lif,
+             label="$\\mathrm{nonlinear~theory~} \\chi_2^{\\mathrm{LIF}}$")
+    ax1.plot(t, rate_ana_lifac,
+             label="$\\mathrm{nonlinear~theory~} \\chi_2^{\\mathrm{LIFAC}}$")
+    ax1.plot(t, rate_ana_lifac_lin,
+             label="$\\mathrm{linear~theory~} \\chi_2^{\\mathrm{LIFAC}}$")
+    ax1.legend(loc="upper right", frameon="tight")
 
+    ax2.eventplot(data_raster, linestyles="dotted")
+    ax2.set_ylabel("$\mathrm{trials}$")
+    ax2.set_xlabel("$t$")
+    ax2.set_xlim(x_min, x_max)
+    ax2.set_ylim(0, 100)
+
+    fig.savefig("img/"+pre+".png", bbox_inches="tight")
     plt.show()
 
 
