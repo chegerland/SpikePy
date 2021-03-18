@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 import neurons
 import utils
@@ -13,32 +14,35 @@ def main():
 
     # define lifac neuron
     #lifac = neurons.LIFAC(3.5, 0.1, 0.1, 10.0)
-    lifac = neurons.LIFAC(3.5, 0.1, 1e-1, 20.0)
+    lifac = neurons.LIFAC(3.5, 1e-1, 1e-1, 20.0)
+
+    # frequency range
+    f_min = 0.0
+    f_max = 1.2
+    steps = 50
 
     # calculate analytic matrices and construct the full matrix from them
-    chi_2_numeric_lifac = utils.calculate_analytic_matrix("chi_2_lifac_test.csv", 0.0, 0.1, 20,
+    chi_2_numeric_lifac = utils.calculate_analytic_matrix("chi_2_lifac.csv", f_min, f_max, steps,
                                                           lifac.susceptibility_2)
     chi_2_lifac = utils.create_full_matrix(chi_2_numeric_lifac)
-    chi_2_numeric_lif = utils.calculate_analytic_matrix("chi_2_lifac_lif_test.csv", 0.0, 0.1, 20,
+    chi_2_numeric_lif = utils.calculate_analytic_matrix("chi_2_lifac_lif.csv", f_min, f_max, steps,
                                                         lifac.lif.susceptibility_2)
     chi_2_lif = utils.create_full_matrix(chi_2_numeric_lif)
-
-    max_freq_bin = 0.1*20
-    #max_freq_bin = 350
 
     # plotting
     matplotlib.rcParams["text.usetex"] = True
     matplotlib.rcParams["font.size"] = 20
     matplotlib.rcParams['axes.titlepad'] = 20
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(30, 30))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(20, 20))
 
     kwargs_abs = {
-        'extent': [-max_freq_bin / 100, max_freq_bin / 100, -max_freq_bin / 100, max_freq_bin / 100],
+        'extent': [-f_max, f_max, -f_max, f_max],
+        'norm' : LogNorm(vmin=1e-2, vmax = np.abs(chi_2_lifac).max())
         #'vmin': 0,
         #'vmax': 0.5,
     }
     kwargs_angle = {
-        'extent': [-max_freq_bin / 100, max_freq_bin / 100, -max_freq_bin / 100, max_freq_bin / 100],
+        'extent': [-f_max, f_max, -f_max, f_max],
     }
 
     ax1.set_title("$|\\chi_2^{\\mathrm{LIFAC}}(f_1, f_2)|$")
@@ -54,7 +58,7 @@ def main():
     utils.plot_complex_angle(fig, ax4, np.angle(chi_2_lif), **kwargs_angle)
 
     # save the file and show the plot
-    fig.savefig("img/suscept_lifac_matrix_lif.png", bbox_inches="tight")
+    #fig.savefig("img/suscept_lifac_matrix_lif.png", bbox_inches="tight")
     plt.show()
 
 

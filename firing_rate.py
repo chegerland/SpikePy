@@ -22,7 +22,7 @@ def main():
 
     # files
     path = "../Spike/data/Firing_rate/"
-    ini = "lifac_two_sigs_slow.ini"
+    ini = "lifac_two_sigs.ini"
     ini_path = path + ini
     pre, ext = os.path.splitext(ini)
     raster_path = path + pre + "_raster.csv"
@@ -52,19 +52,19 @@ def main():
     signal = neurons.TwoCosineSignal.from_ini(ini_path)
     rate_ana_lif = signal.firing_rate_nonlinear(lifac.lif, t)
     rate_ana_lifac = signal.firing_rate_nonlinear(lifac, t)
-    rate_ana_lifac_lin = signal.firing_rate_linear(lifac.lif, t)
+    rate_ana_lifac_lin = signal.firing_rate_linear(lifac, t)
 
     # plot
     logging.info("Produce the plot.")
 
     # set time limits
-    x_min = 20
+    x_min = 350
     x_max = 400
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10), sharex=True)
     ax1.set_ylabel("$r(t)$")
     ax1.set_xlim(x_min, x_max)
-    #ax1.set_ylim(0, 0.9)
+    ax1.set_ylim(0, 2)
     ax1.plot(t, rate)
     ax1.plot(t, rate_ana_lif,
              label="$\\mathrm{nonlinear~theory~} \\chi_2^{\\mathrm{LIF}}$")
@@ -80,6 +80,7 @@ def main():
     ax2.set_xlim(x_min, x_max)
     ax2.set_ylim(0, 100)
 
+    logging.info("Saving plot.")
     fig.savefig("img/"+pre+".png", bbox_inches="tight")
     plt.show()
 

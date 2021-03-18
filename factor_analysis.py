@@ -12,10 +12,10 @@ def main():
     """
 
     # define lifac neuron (mu, D, Delta, tau_a)
-    lifac = neurons.LIFAC(3.5, 0.1, 1e-1, 20.0)
+    lifac = neurons.LIFAC.from_ini("../Spike/data/Firing_rate/lifac_two_sigs_slow.ini")
 
     # frequency scale
-    f = np.logspace(-3, 1.5, num=100)
+    f = np.logspace(-3, 1.5, num=300)
     c = np.zeros(f.shape[0], dtype=complex)
     for i in range(len(f)):
         c[i] = lifac.c_function(2. * pi * f[i])
