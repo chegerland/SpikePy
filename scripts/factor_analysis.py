@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
 import numpy as np
-import neurons
 import matplotlib
 from math import pi
+from spike import LIFAC
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     """
 
     # define lifac neuron (mu, D, Delta, tau_a)
-    lifac = neurons.LIFAC.from_ini("../Spike/data/Firing_rate/lifac_two_sigs_slow.ini")
+    lifac = LIFAC.from_ini("../Spike/data/Firing_rate/lifac_two_sigs_slow.ini")
 
     # frequency scale
     f = np.logspace(-3, 1.5, num=300)

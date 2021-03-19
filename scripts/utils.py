@@ -2,6 +2,30 @@ import os
 import numpy as np
 from math import pi
 
+def calculate_linear_suscept(file_path, f_min, f_max, steps, susceptibility):
+    # check if there is already a file
+    if os.path.isfile(file_path):
+        chi_1 = np.genfromtxt(file_path, delimiter=',', dtype=complex)
+        print("Reading matrix from file", file_path)
+    else:
+        print("Calculating matrix...")
+        
+        # define resolution
+        f = np.linspace(f_min, f_max, num=steps)
+        chi_1 = np.zeros(shape=(steps), dtype=complex)
+
+        # calculate minimal matrix
+        for i in range(steps):
+            print("Step", i, "of", steps)
+            chi_1[i] = susceptibility(2.0 * pi * f[i])
+
+        # save the minimal matrix
+        print("Saving matrix to file", file_path)
+        np.savetxt(file_path, chi_1, delimiter=',')
+
+    return chi_1
+
+
 
 def calculate_analytic_matrix(file_path, f_min, f_max, steps, susceptibility):
     """

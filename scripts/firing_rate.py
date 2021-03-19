@@ -2,7 +2,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import neurons
+import spike
 import csv
 import os
 import logging
@@ -22,7 +22,7 @@ def main():
 
     # files
     path = "../Spike/data/Firing_rate/"
-    ini = "lifac_two_sigs.ini"
+    ini = "lifac_two_sigs_slow.ini"
     ini_path = path + ini
     pre, ext = os.path.splitext(ini)
     raster_path = path + pre + "_raster.csv"
@@ -48,8 +48,8 @@ def main():
 
     # define neurons and signal
     logging.info("Define analytic LIFAC neurons and calculate analytic rates.")
-    lifac = neurons.LIFAC.from_ini(ini_path)
-    signal = neurons.TwoCosineSignal.from_ini(ini_path)
+    lifac = spike.LIFAC.from_ini(ini_path)
+    signal = spike.TwoCosineSignal.from_ini(ini_path)
     rate_ana_lif = signal.firing_rate_nonlinear(lifac.lif, t)
     rate_ana_lifac = signal.firing_rate_nonlinear(lifac, t)
     rate_ana_lifac_lin = signal.firing_rate_linear(lifac, t)
@@ -61,6 +61,8 @@ def main():
     x_min = 350
     x_max = 400
 
+    matplotlib.rcParams["text.usetex"] = True
+    matplotlib.rcParams["font.size"] = 26
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 10), sharex=True)
     ax1.set_ylabel("$r(t)$")
     ax1.set_xlim(x_min, x_max)
@@ -80,8 +82,8 @@ def main():
     ax2.set_xlim(x_min, x_max)
     ax2.set_ylim(0, 100)
 
-    logging.info("Saving plot.")
-    fig.savefig("img/"+pre+".png", bbox_inches="tight")
+    #logging.info("Saving plot.")
+    #fig.savefig("img/"+pre+".png", bbox_inches="tight")
     plt.show()
 
 
