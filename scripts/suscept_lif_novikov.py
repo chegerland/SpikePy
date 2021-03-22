@@ -2,7 +2,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import neurons
+from spike import LIF
 
 from math import pi
 
@@ -11,7 +11,7 @@ def main():
     # define LIFAC and LIF
     mu = 1.1
     D = 1e-3
-    lif = neurons.LIF(mu, D)
+    lif = LIF(mu, D)
 
     print("loading data")
     # read data
