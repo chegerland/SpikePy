@@ -25,6 +25,33 @@ def calculate_linear_suscept(file_path, f_min, f_max, steps, susceptibility):
 
     return chi_1
 
+def calculate_novikov_suscept(file_path_1, file_path_2, f_min, f_max, steps, susceptibility_1, susceptibility_2):
+    # check if there is already a file
+    if os.path.isfile(file_path_2) and os.path.isfile(file_path_2):
+        chi_1 = np.genfromtxt(file_path_1, delimiter=',', dtype=complex)
+        chi_2 = np.genfromtxt(file_path_2, delimiter=',', dtype=complex)
+        print("Reading linear suscept from file", file_path_1)
+        print("Reading nonlinear suscept from file", file_path_2)
+    else:
+        print("Calculating suscepts...")
+        
+        # define resolution
+        f = np.logspace(f_min, f_max, num=steps)
+        chi_1 = np.zeros(shape=(steps), dtype=complex)
+        chi_2 = np.zeros(shape=(steps), dtype=complex)
+
+        # calculate minimal matrix
+        for i in range(steps):
+            print("Step", i, "of", steps)
+            chi_1[i] = susceptibility_1(2.0 * pi * f[i])
+            chi_2[i] = susceptibility_2(2.0 * pi * f[i], 2.0 * pi * f[i])
+
+        # save the minimal matrix
+        print("Saving suscepts to file", file_path_1, file_path_2)
+        np.savetxt(file_path_1, chi_1, delimiter=',')
+        np.savetxt(file_path_2, chi_2, delimiter=',')
+
+    return chi_1, chi_2
 
 
 def calculate_analytic_matrix(file_path, f_min, f_max, steps, susceptibility):
