@@ -272,24 +272,46 @@ class LIF:
         return result
 
     def susceptibility_2(self, omega_1, omega_2):
-        alpha = self.r0 * (1.0 - 1.0j * omega_1 - 1.0j * omega_2) * (1.0j * omega_1 + 1.0j * omega_2) / (
-            2.0 * self.D * (1.0j * omega_1 - 1.0) * (1.0j * omega_2 - 1.0))
-        a = mp.pcfd(1.0j * omega_1 + 1.0j * omega_2 - 2.0,
-                    (self.mu - 1.0) / mp.sqrt(self.D))
-        b = mp.exp((2.0 * self.mu - 1.0) / (4.0 * self.D)) * mp.pcfd(1.0j * omega_1 + 1.0j * omega_2 - 2.0,
-                                                                     self.mu / mp.sqrt(self.D))
-        c = mp.pcfd(1.0j * omega_1 + 1.0j * omega_2,
-                    (self.mu - 1.0) / mp.sqrt(self.D))
-        d = mp.exp((2.0 * self.mu - 1.0) / (4.0 * self.D)) * mp.pcfd(1.0j * omega_1 + 1.0j * omega_2,
-                                                                     self.mu / mp.sqrt(self.D))
+        mu = self.mu
+        D = self.D
+        r0 = self.r0
+        chi_1 = self.susceptibility_1
 
-        beta = (1.0j * omega_1 + 1.0j * omega_2) / (2.0 * mp.sqrt(self.D))
-        a_2 = (self.susceptibility_1(omega_1) / (1.0j * omega_2 - 1.0) + self.susceptibility_1(omega_2) / (
-            1.0j * omega_1 - 1.0)) * mp.pcfd(1.0j * omega_1 + 1.0j * omega_2 - 1.0,
-                                             (self.mu - 1.0) / mp.sqrt(self.D))
-        a_3 = (self.susceptibility_1(omega_1) / (1.0j * omega_2 - 1.0) + self.susceptibility_1(omega_2) / (
-            1.0j * omega_1 - 1.0)) * mp.exp((2 * self.mu - 1.0) / (4.0 * self.D)) * mp.pcfd(
-            1.0j * omega_1 + 1.0j * omega_2 - 1.0, self.mu / mp.sqrt(self.D))
+        # check if we got the case omega_2 = -omega_1
+        if omega_2 == -omega_1:
+            alpha = r0 * (1.0j * omega_1 + 1.0j) / (
+                2.0 * D * (1.0j * omega_1 - 1.0) * (-1.0j * omega_1 - 1.0) * -1.0j * mp.exp(-(mu - 1.0)**2 / (4*D)))
+            a = mp.pcfd(-2.0, (mu - 1.0) / mp.sqrt(D))
+            b = mp.exp((2.0 * mu - 1.0) / (4.0 * D)) * \
+                mp.pcfd(-2.0, mu / mp.sqrt(D))
+            c = (mu - 1.0) / (2.0 * mp.sqrt(D))
+            d = mu / (2.0 * mp.sqrt(D))
+
+            beta = (1.0j * omega_1 + 1.0j) / (2.0 * mp.sqrt(D)
+                                              * -1.0j * mp.exp(-(mu - 1.0)**2 / (4*D)))
+            a_2 = (chi_1(omega_1) / (-1.0j * omega_1 - 1.0) + chi_1(-omega_1) / (
+                1.0j * omega_1 - 1.0)) * mp.pcfd(- 1.0, (mu - 1.0) / mp.sqrt(D))
+            a_3 = (chi_1(omega_1) / (-1.0j * omega_1 - 1.0) + chi_1(-omega_1) / (
+                1.0j * omega_1 - 1.0)) * mp.exp((2.0 * mu - 1.0) / (4.0 * D)) * mp.pcfd(-1.0, mu / mp.sqrt(D))
+        else:
+            alpha = r0 * (1.0 - 1.0j * omega_1 - 1.0j * omega_2) * (1.0j * omega_1 + 1.0j * omega_2) / (
+                2.0 * D * (1.0j * omega_1 - 1.0) * (1.0j * omega_2 - 1.0))
+            a = mp.pcfd(1.0j * omega_1 + 1.0j * omega_2 - 2.0,
+                        (mu - 1.0) / mp.sqrt(D))
+            b = mp.exp((2.0 * mu - 1.0) / (4.0 * D)) * mp.pcfd(1.0j * omega_1 + 1.0j * omega_2 - 2.0,
+                                                               mu / mp.sqrt(D))
+            c = mp.pcfd(1.0j * omega_1 + 1.0j * omega_2,
+                        (mu - 1.0) / mp.sqrt(D))
+            d = mp.exp((2.0 * mu - 1.0) / (4.0 * D)) * mp.pcfd(1.0j * omega_1 + 1.0j * omega_2,
+                                                               mu / mp.sqrt(D))
+
+            beta = (1.0j * omega_1 + 1.0j * omega_2) / (2.0 * mp.sqrt(D))
+            a_2 = (chi_1(omega_1) / (1.0j * omega_2 - 1.0) + chi_1(omega_2) / (
+                1.0j * omega_1 - 1.0)) * mp.pcfd(1.0j * omega_1 + 1.0j * omega_2 - 1.0,
+                                                 (mu - 1.0) / mp.sqrt(D))
+            a_3 = (chi_1(omega_1) / (1.0j * omega_2 - 1.0) + chi_1(omega_2) / (
+                1.0j * omega_1 - 1.0)) * mp.exp((2 * mu - 1.0) / (4.0 * D)) * mp.pcfd(
+                1.0j * omega_1 + 1.0j * omega_2 - 1.0, mu / mp.sqrt(D))
 
         result = np.cdouble(alpha * (a - b) / (c - d) +
                             beta * a_2 / (c - d) - beta * a_3 / (c - d))

@@ -2,6 +2,7 @@ import os
 import numpy as np
 from math import pi
 
+
 def calculate_linear_suscept(file_path, f_min, f_max, steps, susceptibility):
     # check if there is already a file
     if os.path.isfile(file_path):
@@ -9,7 +10,7 @@ def calculate_linear_suscept(file_path, f_min, f_max, steps, susceptibility):
         print("Reading matrix from file", file_path)
     else:
         print("Calculating matrix...")
-        
+
         # define resolution
         f = np.linspace(f_min, f_max, num=steps)
         chi_1 = np.zeros(shape=(steps), dtype=complex)
@@ -25,33 +26,41 @@ def calculate_linear_suscept(file_path, f_min, f_max, steps, susceptibility):
 
     return chi_1
 
-def calculate_novikov_suscept(file_path_1, file_path_2, f_min, f_max, steps, susceptibility_1, susceptibility_2):
+
+def calculate_novikov_suscept(file_path_1, file_path_2, file_path_3, f_min, f_max, steps, susceptibility_1, susceptibility_2):
     # check if there is already a file
-    if os.path.isfile(file_path_2) and os.path.isfile(file_path_2):
+    if os.path.isfile(file_path_2) and os.path.isfile(file_path_2) and os.path.isfile(file_path_3):
         chi_1 = np.genfromtxt(file_path_1, delimiter=',', dtype=complex)
-        chi_2 = np.genfromtxt(file_path_2, delimiter=',', dtype=complex)
+        chi_2_diag = np.genfromtxt(file_path_2, delimiter=',', dtype=complex)
+        chi_2_antidiag = np.genfromtxt(
+            file_path_3, delimiter=',', dtype=complex)
         print("Reading linear suscept from file", file_path_1)
-        print("Reading nonlinear suscept from file", file_path_2)
+        print("Reading diagonal nonlinear suscept from file", file_path_2)
+        print("Reading antidiagonal nonlinear suscept from file", file_path_3)
     else:
         print("Calculating suscepts...")
-        
+
         # define resolution
         f = np.logspace(f_min, f_max, num=steps)
         chi_1 = np.zeros(shape=(steps), dtype=complex)
-        chi_2 = np.zeros(shape=(steps), dtype=complex)
+        chi_2_diag = np.zeros(shape=(steps), dtype=complex)
+        chi_2_antidiag = np.zeros(shape=(steps), dtype=complex)
 
         # calculate minimal matrix
         for i in range(steps):
             print("Step", i, "of", steps)
             chi_1[i] = susceptibility_1(2.0 * pi * f[i])
-            chi_2[i] = susceptibility_2(2.0 * pi * f[i], 2.0 * pi * f[i])
+            chi_2_diag[i] = susceptibility_2(2.0 * pi * f[i], 2.0 * pi * f[i])
+            chi_2_antidiag[i] = susceptibility_2(
+                2.0 * pi * f[i], -2.0 * pi * f[i])
 
         # save the minimal matrix
-        print("Saving suscepts to file", file_path_1, file_path_2)
+        print("Saving suscepts to file", file_path_1, file_path_2, file_path_3)
         np.savetxt(file_path_1, chi_1, delimiter=',')
-        np.savetxt(file_path_2, chi_2, delimiter=',')
+        np.savetxt(file_path_2, chi_2_diag, delimiter=',')
+        np.savetxt(file_path_3, chi_2_antidiag, delimiter=',')
 
-    return chi_1, chi_2
+    return chi_1, chi_2_diag, chi_2_antidiag
 
 
 def calculate_analytic_matrix(file_path, f_min, f_max, steps, susceptibility):
@@ -82,9 +91,11 @@ def calculate_analytic_matrix(file_path, f_min, f_max, steps, susceptibility):
             print("Step", i, "of", steps)
             for j in range(steps):
                 if i <= j:
-                    chi_2[i][j] = susceptibility(2.0 * pi * f[i], 2.0 * pi * f[j])
+                    chi_2[i][j] = susceptibility(
+                        2.0 * pi * f[i], 2.0 * pi * f[j])
                 else:
-                    chi_2[i][j] = susceptibility(2.0 * pi * f[i], -2.0 * pi * f[j])
+                    chi_2[i][j] = susceptibility(
+                        2.0 * pi * f[i], -2.0 * pi * f[j])
 
         # save the minimal matrix
         print("Saving matrix to file", file_path)
@@ -166,9 +177,10 @@ def plot_complex_angle(fig, axis, data, **kwargs):
     susceptibility matrix.
     """
     # plot the matrix with a colorbar,
-    pos = axis.matshow(data, **kwargs, vmin = -pi, vmax = pi, origin='lower')
+    pos = axis.matshow(data, **kwargs, vmin=-pi, vmax=pi, origin='lower')
     cbar = fig.colorbar(pos, ax=axis, ticks=[-pi, -pi / 2, 0, pi / 2, pi])
-    cbar.ax.set_yticklabels(['$-\\pi$', '$-\\frac{\\pi}{2}$', '0', '$\\frac{\\pi}{2}$', '$\\pi$'])
+    cbar.ax.set_yticklabels(
+        ['$-\\pi$', '$-\\frac{\\pi}{2}$', '0', '$\\frac{\\pi}{2}$', '$\\pi$'])
 
     # plot lines for orientation
     axis.axvline(x=0, color='black')
